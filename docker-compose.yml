@@ -1,0 +1,94 @@
+#version: '2'
+services:
+
+  # POSTGRES
+  postgres:
+    container_name: postgres
+    image: postgres
+    ports:
+        - "5433:5432"
+    environment:
+        POSTGRES_DB: "orders"
+        POSTGRES_PASSWORD: "password"
+        POSTGRES_USER: "postgres"
+    restart: always
+
+  # RABBITMQ 
+  rabbit:
+      container_name: rabbitmq
+      image: rabbitmq:3.7-management
+      ports:
+          - "15673:15672"
+      restart: always
+
+  # PGADMIN
+  # pgadmin:
+  #   container_name: pgadmin
+  #   image: dpage/pgadmin4
+  #   restart: always
+  #   depends_on:
+  #     - postgres
+  #   ports:
+  #     - "5050:80"
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+
+  # GATEWAY
+  gateway:
+      container_name: gateway
+      build: ./gateway
+      depends_on:
+        - rabbit
+      ports:
+          - "8003:8000"
+      links:
+          - rabbit
+      environment:
+          RABBIT_PASSWORD: "guest"
+          RABBIT_USER: "guest"
+          RABBIT_HOST: "rabbit"
+          RABBIT_PORT: "5672"
+          RABBIT_MANAGEMENT_PORT: "15672"
+
+  # ECHO
+  echo:
+    container_name: echo
+    build: ./echo
+    restart: always
+    external_links:
+      - rabbit:nameko-example-rabbitmq
+    environment:
+      RABBIT_PASSWORD: "guest"
+      RABBIT_USER: "guest"
+      RABBIT_HOST: "rabbit"
+      RABBIT_PORT: "5672"
+      RABBIT_MANAGEMENT_PORT: "15672"
+
+  # TEST POSTGRES
+  orders:
+    container_name: orders
+    build: ./orders
+    depends_on:
+      - rabbit
+      - postgres
+    ports:
+        - "8001:8000"
+    links:
+        - rabbit
+        - postgres
+    environment:
+        DB_PASSWORD: "password"
+        DB_USER: "postgres"
+        DB_HOST: "postgres"
+        DB_NAME: "orders"
+        RABBIT_PASSWORD: "guest"
+        RABBIT_USER: "guest"
+        RABBIT_HOST: "rabbit"
+        RABBIT_PORT: "5672"
+        RABBIT_MANAGEMENT_PORT: "15672"
+
+networks:
+  default:
+    name: vct
+    external: true
