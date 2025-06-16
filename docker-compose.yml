@@ -1,18 +1,6 @@
 #version: '2'
 services:
 
-  # POSTGRES TEST
-  # postgres:
-  #   container_name: postgres
-  #   image: postgres
-  #   ports:
-  #       - "5433:5432"
-  #   environment:
-  #       POSTGRES_DB: "orders"
-  #       POSTGRES_PASSWORD: "password"
-  #       POSTGRES_USER: "postgres"
-  #   restart: always
-
   # POSTGRES PAYMENT
   postgres:
     container_name: postgres
@@ -77,29 +65,7 @@ services:
       RABBIT_PORT: "5672"
       RABBIT_MANAGEMENT_PORT: "15672"
 
-  # TEST
-  # orders:
-  #   container_name: orders
-  #   build: ./orders
-  #   depends_on:
-  #     - rabbit
-  #     - postgres
-  #   ports:
-  #       - "8001:8000"
-  #   links:
-  #       - rabbit
-  #       - postgres
-  #   environment:
-  #       DB_PASSWORD: "password"
-  #       DB_USER: "postgres"
-  #       DB_HOST: "postgres"
-  #       DB_NAME: "orders"
-  #       RABBIT_PASSWORD: "guest"
-  #       RABBIT_USER: "guest"
-  #       RABBIT_HOST: "rabbit"
-  #       RABBIT_PORT: "5672"
-  #       RABBIT_MANAGEMENT_PORT: "15672"
-
+  # PAYMENTS
   payments:
     container_name: payments
     build: ./payments
