@@ -4,7 +4,7 @@ from nameko.rpc import rpc
 from nameko_sqlalchemy import DatabaseSession
 
 from payments.exceptions import NotFound
-from payments.models import DeclarativeBase, Payment
+from payments.models import DeclarativeBase, Payment, PaymentMethodEnum
 from payments.schemas import PaymentSchema
 
 
@@ -36,7 +36,34 @@ class PaymentsService:
     
     @rpc
     def create_payment(self, data):
-        return "hello create payment"
+        validated, errors = PaymentSchema().load(data)
+        if errors:
+            raise BadRequest(f"Validation failed: {errors}")
+
+        new_payment = Payment(
+            customer_id=validated['customer_id'],
+            requester_type=validated['requester_type'],
+            requester_id=validated['requester_id'],
+            secondary_requester_id=validated['secondary_requester_id'],     # If None, default to Null in Schema
+
+            payment_method=validated['payment_method'],
+            payment_amount=validated['payment_amount'],
+            status=validated['status'],                                     # If None, default to 1 in Schema
+
+            psp_id=None,
+            signature_key=None,
+            settle_date=None
+        )
+
+        self.db.add(new_payment)
+        self.db.commit()
+
+        # Dispatch event in Docker
+        # self.event_dispatcher('test_object_created', {
+        #     'test_result': testResult,
+        # })
+
+        return PaymentSchema().dump(new_payment).data
     
     @rpc
     def complete_payment(self, payment_id):

@@ -7,8 +7,8 @@ from nameko.rpc import RpcProxy
 from werkzeug import Response
 
 from gateway.entrypoints import http
-from gateway.exceptions import OrderNotFound, ProductNotFound
-from gateway.schemas import CreateTestSchema, GetTestSchema
+from gateway.exceptions import PaymentNotFound
+from gateway.schemas import CreatePaymentSchema, GetPaymentSchema
 
 
 class GatewayService(object):
@@ -79,18 +79,22 @@ class GatewayService(object):
         
     @http("POST", "/payment")
     def create_payment(self, request):
-        """
-        Create a new payment.
-        """
-        data = request.get_json()
-        if not data:
-            raise BadRequest("Invalid JSON data")
+        schema = CreatePaymentSchema(strict=True)
 
-        result = self.payments_rpc.create_payment(data)
-        return Response(
-            json.dumps(result),
-            mimetype='application/json'
-        )
+        # Validate JSON
+        try:
+            payment_data = schema.loads(request.get_data(as_text=True)).data
+        except ValueError as exc:
+            raise BadRequest("Invalid json: {}".format(exc))
+
+        # RPC call with validated JSON data
+        result = self.payments_rpc.create_payment(payment_data)
+        
+        # Get ID
+        resultId = result['id']
+    
+        # Return ID
+        return Response(json.dumps({'id': resultId}), mimetype='application/json')
     
     @http("PATCH", "/payment/complete/<int:payment_id>")
     def complete_payment(self, request, payment_id):
@@ -131,59 +135,59 @@ class GatewayService(object):
     
 # ========================================================================================================================================================================== 
     # Ini buat test   
-    @http("GET", "/hello/<string:name>")
-    def hello(self, request, name):
-        greeting = self.echo_rpc.hello(name)
-        return Response(json.dumps({"message": greeting}), mimetype="application/json")
+    # @http("GET", "/hello/<string:name>")
+    # def hello(self, request, name):
+    #     greeting = self.echo_rpc.hello(name)
+    #     return Response(json.dumps({"message": greeting}), mimetype="application/json")
     
-    @http("GET", "/test/<int:test_id>", expected_exceptions=OrderNotFound)
-    def get_test(self, request, test_id):
-        test = self.payments_rpc.get_test(test_id)
-        return Response(
-            GetTestSchema().dumps(test).data,
-            mimetype='application/json'
-        )
+    # @http("GET", "/test/<int:test_id>", expected_exceptions=OrderNotFound)
+    # def get_test(self, request, test_id):
+    #     test = self.payments_rpc.get_test(test_id)
+    #     return Response(
+    #         GetTestSchema().dumps(test).data,
+    #         mimetype='application/json'
+    #     )
 
-    @http("POST", "/test",expected_exceptions=(ValidationError, ProductNotFound, BadRequest))
-    def create_test(self, request):
-        schema = CreateTestSchema(strict=True)
+    # @http("POST", "/test",expected_exceptions=(ValidationError, ProductNotFound, BadRequest))
+    # def create_test(self, request):
+    #     schema = CreateTestSchema(strict=True)
 
-        # Validate JSON
-        try:
-            test_data = schema.loads(request.get_data(as_text=True)).data
-        except ValueError as exc:
-            raise BadRequest("Invalid json: {}".format(exc))
+    #     # Validate JSON
+    #     try:
+    #         test_data = schema.loads(request.get_data(as_text=True)).data
+    #     except ValueError as exc:
+    #         raise BadRequest("Invalid json: {}".format(exc))
 
-        # RPC call with validated JSON data
-        result = self.payments_rpc.create_test(test_data)
+    #     # RPC call with validated JSON data
+    #     result = self.payments_rpc.create_test(test_data)
         
-        # Get ID
-        resultId = result['id']
+    #     # Get ID
+    #     resultId = result['id']
     
-        # Return ID
-        return Response(json.dumps({'id': resultId}), mimetype='application/json')
+    #     # Return ID
+    #     return Response(json.dumps({'id': resultId}), mimetype='application/json')
     
-    @http("PUT", "/test/<int:test_id>",expected_exceptions=(ValidationError, ProductNotFound, BadRequest))
-    def update_test(self, request, test_id):
-        schema = CreateTestSchema(strict=True)
+    # @http("PUT", "/test/<int:test_id>",expected_exceptions=(ValidationError, ProductNotFound, BadRequest))
+    # def update_test(self, request, test_id):
+    #     schema = CreateTestSchema(strict=True)
 
-        # Validate JSON
-        try:
-            test_data = schema.loads(request.get_data(as_text=True)).data
-        except ValueError as exc:
-            raise BadRequest("Invalid json: {}".format(exc))
+    #     # Validate JSON
+    #     try:
+    #         test_data = schema.loads(request.get_data(as_text=True)).data
+    #     except ValueError as exc:
+    #         raise BadRequest("Invalid json: {}".format(exc))
 
-        # RPC call with validated JSON data
-        result = self.payments_rpc.update_test(test_id, test_data)
+    #     # RPC call with validated JSON data
+    #     result = self.payments_rpc.update_test(test_id, test_data)
         
-        # Return instance
-        return Response(
-            GetTestSchema().dumps(result).data,
-            mimetype='application/json'
-        )
+    #     # Return instance
+    #     return Response(
+    #         GetTestSchema().dumps(result).data,
+    #         mimetype='application/json'
+    #     )
     
-    @http("DELETE", "/test/<int:test_id>", expected_exceptions=OrderNotFound)
-    def delete_test(self, request, test_id):
+    # @http("DELETE", "/test/<int:test_id>", expected_exceptions=OrderNotFound)
+    # def delete_test(self, request, test_id):
         test = self.payments_rpc.delete_test(test_id)
         return Response(
             GetTestSchema().dumps(test).data,
