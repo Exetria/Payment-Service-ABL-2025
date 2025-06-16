@@ -1,0 +1,132 @@
+from nameko.exceptions import BadRequest
+from nameko.events import EventDispatcher
+from nameko.rpc import rpc
+from nameko_sqlalchemy import DatabaseSession
+
+from payments.exceptions import NotFound
+from payments.models import DeclarativeBase, Payment
+from payments.schemas import PaymentSchema
+
+
+class PaymentsService:
+    name = 'payments'
+
+    db = DatabaseSession(DeclarativeBase)
+    event_dispatcher = EventDispatcher()
+
+    @rpc
+    def get_payment_list(self):
+        return "hello payment list"
+    
+    @rpc
+    def get_payment_by_id(self, payment_id):
+        return "hello payment by id"
+    
+    @rpc
+    def get_payment_by_requester_id(self, requester_id):
+        return "hello payment by requester id"
+    
+    @rpc
+    def get_payment_status(self, payment_id):
+        return "hello payment status"
+    
+    @rpc
+    def get_payment_amount(self, payment_id):
+        return "hello payment amount"
+    
+    @rpc
+    def create_payment(self, data):
+        return "hello create payment"
+    
+    @rpc
+    def complete_payment(self, payment_id):
+        return "hello complete payment"
+
+    @rpc
+    def cancel_payment(self, payment_id):
+        return "hello cancel payment"
+    
+# =================================================================================FUNGSI MIDTRANS=============================================================================== 
+
+    def createMidtransTransaction(self):
+        return "hello create midtrans transaction"
+    
+    def checkMidtransTransactionStatus(self):
+        return "hello check midtrans transaction status"
+    
+    def completeMidtransTransactionStatus(self):
+        return "hello complete midtrans transaction status"
+    
+    def cancelMidtransTransactionStatus(self):
+        return "hello cancel midtrans transaction status"
+    
+# =================================================================================FUNGSI TEST=============================================================================== 
+    
+    @rpc
+    def get_test(self, test_id):
+        test = self.db.query(Payment).get(test_id)
+
+        if not test:
+            raise NotFound('Payment with id {} not found'.format(test_id))
+
+        return PaymentSchema().dump(test).data
+
+    @rpc
+    def create_test(self, data):
+        # Validate input
+        validated, errors = PaymentSchema().load(data)
+        if errors:
+            raise BadRequest("Validation failed: {}".format(errors))
+        
+        # Create Instance
+        test = Payment(
+            name=validated['name'],
+            age=validated['age']
+        )
+        
+        # Add to db
+        self.db.add(test)
+        self.db.commit()
+
+        # Serialize the instance
+        testResult = PaymentSchema().dump(test).data
+
+        # Dispatch event in Docker
+        self.event_dispatcher('test_object_created', {
+            'test_result': testResult,
+        })
+
+        # Return the serialized instance
+        return testResult
+
+    @rpc
+    def update_test(self, test_id, data):
+        # Validate input
+        validated, errors = PaymentSchema().load(data)
+        if errors:
+            raise BadRequest("Validation failed: {}".format(errors))
+
+        # Fetch the existing instance
+        test = self.db.query(Payment).get(test_id)
+
+        # If not found, raise NotFound exception
+        if not test:
+            raise NotFound('Payment with id {} not found'.format(data['id']))
+        
+        # Update the instance in db
+        test.name = data['name']
+        test.age = data['age']
+        self.db.commit()
+        
+        # Return updated instance (serialized)
+        return PaymentSchema().dump(test).data
+
+    @rpc
+    def delete_test(self, test_id):
+        # Fetch targeted instance
+        test = self.db.query(Payment).get(test_id)
+        
+        # Delete in db
+        self.db.delete(test)
+        self.db.commit()
+
