@@ -75,11 +75,74 @@ class PaymentsService:
     
     @rpc
     def complete_payment(self, payment_id):
-        return "hello complete payment"
+        try: 
+            # Fetch the existing instance
+            targetedPayment = self.db.query(Payment).get(payment_id)
 
+            # If not found or already completed/cancelled, return
+            if not targetedPayment:
+                return "Payment Not Found"
+            if targetedPayment.status != 1:
+                return "Already Finished or Cancelled"
+            
+            # Update the instance in db
+            targetedPayment.status = 2                  # DONE
+            self.db.commit()
+            
+            # Update requester status
+            self.update_requester_status(targetedPayment.requester_type, targetedPayment.requester_id, targetedPayment.secondary_requester_id, 1)
+        
+            # Return status
+            return "Success"
+        
+        except Exception as e:
+            # Return status
+            return "Failed"
+        
     @rpc
     def cancel_payment(self, payment_id):
-        return "hello cancel payment"
+        try:
+            # Fetch the existing instance
+            targetedPayment = self.db.query(Payment).get(payment_id)
+
+            # If not found or already completed/cancelled, return
+            if not targetedPayment:
+                return "Payment Not Found"
+            if targetedPayment.status != 1:
+                return "Already Finished or Cancelled"
+            
+            # Update the instance in db
+            targetedPayment.status = 3                  # CANCELLED
+            self.db.commit()
+            
+            # Update requester status
+            self.update_requester_status(targetedPayment.requester_type, targetedPayment.requester_id, targetedPayment.secondary_requester_id, 0)
+
+            # Return status
+            return "Success"
+        
+        except Exception as e:
+            # Return status
+            return "Failed"
+    
+    def update_requester_status(self, requester_type, requester_id, secondary_requester_id, status):
+        # TODO: handle status, 0 for cancel, 1 for complete
+        
+        # 1 = RPC to Order | 2 to Reservation | 3  to Event	
+        if requester_type == 1:
+            # Call update API to order
+            if secondary_requester_id is not None:
+                # Call update API to delivery (if secondary_requester_id not null)
+                pass
+            pass
+        elif requester_type == 2:
+            # Call update API to reservation
+            pass
+        elif requester_type == 3:
+            # Call update API to event
+            pass
+
+        return
     
 # =================================================================================FUNGSI MIDTRANS=============================================================================== 
 

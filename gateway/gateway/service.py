@@ -96,27 +96,21 @@ class GatewayService(object):
     
     @http("PATCH", "/payment/complete/<int:payment_id>")
     def complete_payment(self, request, payment_id):
-        """
-        Complete a payment by ID.
-        """
-        data = request.get_json()
-        if not data:
-            raise BadRequest("Invalid JSON data")
-
-        result = self.payments_rpc.complete_payment(payment_id, data)
+        # return Response(json.dumps({"message": "Complete a payment by ID"}), mimetype="application/json")
+        
+        result = self.payments_rpc.complete_payment(payment_id)
         return Response(
-            json.dumps(result),
+            json.dumps({"response": result}),
             mimetype='application/json'
         )
     
     @http("PATCH", "/payment/cancel/<int:payment_id>")
     def cancel_payment(self, request, payment_id):
-        """
-        Cancel a payment by ID.
-        """
+        # return Response(json.dumps({"message": "Cancel a payment by ID"}), mimetype="application/json")
+        
         result = self.payments_rpc.cancel_payment(payment_id)
         return Response(
-            json.dumps(result),
+            json.dumps({"response": result}),
             mimetype='application/json'
         )
     
