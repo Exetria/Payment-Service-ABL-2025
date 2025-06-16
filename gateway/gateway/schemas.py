@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields, validate
     
 class CreatePaymentSchema(Schema):
+    customer_id = fields.Int(required=True)
     requester_type = fields.Int(required=True)
     requester_id = fields.Int(required=True)
     secondary_requester_id = fields.Int(allow_none=True)
@@ -16,6 +17,7 @@ class CreatePaymentSchema(Schema):
 class GetPaymentSchema(Schema):
     id = fields.Int()
 
+    customer_id = fields.Int()
     requester_type = fields.Int()
     requester_id = fields.Int()
     secondary_requester_id = fields.Int(allow_none=True)
@@ -30,13 +32,3 @@ class GetPaymentSchema(Schema):
     settle_date = fields.DateTime(allow_none=True)
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
-
-# TEST
-class CreateTestSchema(Schema):
-    name = fields.Str(required=True)
-    age = fields.Int(required=True)
-
-class GetTestSchema(Schema):
-    id = fields.Int()
-    name = fields.Str()
-    age = fields.Int()

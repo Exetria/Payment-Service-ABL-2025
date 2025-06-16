@@ -25,17 +25,18 @@ DeclarativeBase = declarative_base(cls=Base)
 
 # Python enum for payment_method
 class PaymentMethodEnum(enum.Enum):
-    TUNAI = "tunai"
-    BCA_VA = "bca va"
-    QRIS = "qris"
-    GOPAY = "gopay"
-    OVO = "ovo"
+    tunai = "tunai"
+    bca_va = "bca va"
+    qris = "qris"
+    gopay = "gopay"
+    ovo = "ovo"
 
 class Payment(DeclarativeBase):
     __tablename__ = "payment"
 
     id                       = Column(Integer, primary_key=True, autoincrement=True)
     
+    customer_id              = Column(Integer, nullable=False)
     requester_type           = Column(Integer, nullable=False)
     requester_id             = Column(Integer, nullable=False)
     secondary_requester_id   = Column(Integer)

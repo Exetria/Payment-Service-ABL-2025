@@ -2,8 +2,7 @@ from marshmallow import Schema, fields, validate
 
 class PaymentSchema(Schema):
     id = fields.Int(dump_only=True)
-    
-    customer_id = fields.Int(required=True)
+    customer_
     requester_type = fields.Int(required=True)
     requester_id = fields.Int(required=True)
     secondary_requester_id = fields.Int(allow_none=True)

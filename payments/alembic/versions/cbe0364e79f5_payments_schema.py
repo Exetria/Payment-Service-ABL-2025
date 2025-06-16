@@ -20,6 +20,7 @@ def upgrade():
     op.create_table(
         'payment',
         sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True),
+        sa.Column('customer_id', sa.Integer(), nullable=False),
         sa.Column('requester_type', sa.Integer(), nullable=False),
         sa.Column('requester_id', sa.Integer(), nullable=False),
         sa.Column('secondary_requester_id', sa.Integer(), nullable=True),
