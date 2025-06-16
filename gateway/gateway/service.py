@@ -57,9 +57,8 @@ class GatewayService(object):
         
     @http("GET", "/payment/status/<string:payment_id>")
     def get_payment_status(self, request, payment_id):
-        """
-        Get payment status by payment ID.
-        """
+        # return Response(json.dumps({"message": "Get payment status by payment ID"}), mimetype="application/json")
+        
         status = self.payments_rpc.get_payment_status(payment_id)
         return Response(
             json.dumps({"status": status}),
@@ -68,9 +67,8 @@ class GatewayService(object):
     
     @http("GET", "/payment/amount/<string:payment_id>")
     def get_payment_amount(self, request, payment_id):
-        """
-        Get payment amount by payment ID.
-        """
+        # return Response(json.dumps({"message": "Get payment amount by payment ID"}), mimetype="application/json")
+
         amount = self.payments_rpc.get_payment_amount(payment_id)
         return Response(
             json.dumps({"amount": amount}),

@@ -28,11 +28,19 @@ class PaymentsService:
     
     @rpc
     def get_payment_status(self, payment_id):
-        return "hello payment status"
+        status = self.db.query(Payment.status).filter(Payment.id == payment_id).scalar()
+
+        if not status: raise NotFound(f'Payment with id {payment_id} not found')
+
+        return status
     
     @rpc
     def get_payment_amount(self, payment_id):
-        return "hello payment amount"
+        amount = self.db.query(Payment.payment_amount).filter(Payment.id == payment_id).scalar()
+
+        if not amount: raise NotFound(f'Payment with id {payment_id} not found')
+
+        return amount
     
     @rpc
     def create_payment(self, data):
