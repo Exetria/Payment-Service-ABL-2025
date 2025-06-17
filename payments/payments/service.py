@@ -16,11 +16,27 @@ class PaymentsService:
 
     @rpc
     def get_payment_list(self):
-        return "hello payment list"
-    
+        try:
+            payments = self.db.query(Payment).all()
+            if not payments:
+                return "No Payments Found"
+
+            return PaymentSchema(many=True).dump(payments).data
+
+        except Exception as e:
+            return "Failed to fetch payments"
+
     @rpc
     def get_payment_by_id(self, payment_id):
-        return "hello payment by id"
+        try:
+            payment = self.db.query(Payment).get(payment_id)
+            if not payment:
+                return "Payment Not Found"
+
+            return PaymentSchema().dump(payment).data
+
+        except Exception as e:
+            return "Failed to fetch payment"
     
     @rpc
     def get_payment_by_requester_id(self, requester_id):
@@ -124,7 +140,7 @@ class PaymentsService:
         except Exception as e:
             # Return status
             return "Failed"
-    
+
     def update_requester_status(self, requester_type, requester_id, secondary_requester_id, status):
         # TODO: handle status, 0 for cancel, 1 for complete
         
@@ -159,7 +175,29 @@ class PaymentsService:
         return "hello cancel midtrans transaction status"
     
 # =================================================================================FUNGSI TEST=============================================================================== 
-    
+
+    @rpc
+    def test_get_payment_list(self):
+        try:
+            payments = self.db.query(Payment).all()
+            if not payments:
+                return "No Payments Found"
+
+            return PaymentSchema(many=True).dump(payments).data
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+    @rpc
+    def test_get_payment_by_id(self, payment_id):
+        try:
+            payment = self.db.query(Payment).get(payment_id)
+            if not payment:
+                return "Payment Not Found"
+
+            return PaymentSchema().dump(payment).data
+        except Exception as e:
+            return f"Error: {str(e)}"
+
     @rpc
     def get_test(self, test_id):
         test = self.db.query(Payment).get(test_id)
