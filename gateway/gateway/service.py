@@ -22,7 +22,7 @@ class GatewayService(object):
     payments_rpc = RpcProxy('payments')
     
     
-    @http("GET", "/payment")
+    @http("GET", "/payment", expected_exceptions=(BadRequest,))
     def get_payment_list(self, request):
         """
         Get list of payments.
@@ -33,7 +33,7 @@ class GatewayService(object):
             mimetype='application/json'
         )
         
-    @http("GET", "/payment/<int:payment_id>")
+    @http("GET", "/payment/<int:payment_id>", expected_exceptions=(PaymentNotFound,BadRequest,))
     def get_payment_by_id(self, request, payment_id):
         """
         Get payment by ID.
@@ -44,7 +44,7 @@ class GatewayService(object):
             mimetype='application/json'
         )
     
-    @http("GET", "/payment/requester/<int:requester_id>")
+    @http("GET", "/payment/requester/<int:requester_id>", expected_exceptions=(BadRequest,))
     def get_payment_by_requester_id(self, request, requester_id):
         """
         Get payment by requester ID.
@@ -55,7 +55,7 @@ class GatewayService(object):
             mimetype='application/json'
         )
         
-    @http("GET", "/payment/status/<string:payment_id>")
+    @http("GET", "/payment/<string:payment_id>/status", expected_exceptions=(PaymentNotFound,BadRequest,))
     def get_payment_status(self, request, payment_id):
         # return Response(json.dumps({"message": "Get payment status by payment ID"}), mimetype="application/json")
         
@@ -65,7 +65,7 @@ class GatewayService(object):
             mimetype='application/json'
         )
     
-    @http("GET", "/payment/amount/<string:payment_id>")
+    @http("GET", "/payment/<string:payment_id>/amount", expected_exceptions=(PaymentNotFound,BadRequest,))
     def get_payment_amount(self, request, payment_id):
         # return Response(json.dumps({"message": "Get payment amount by payment ID"}), mimetype="application/json")
 
@@ -75,7 +75,7 @@ class GatewayService(object):
             mimetype='application/json'
         )
         
-    @http("POST", "/payment")
+    @http("POST", "/payment", expected_exceptions=(BadRequest))
     def create_payment(self, request):
         schema = CreatePaymentSchema(strict=True)
 
@@ -94,7 +94,7 @@ class GatewayService(object):
         # Return ID
         return Response(json.dumps({'id': resultId}), mimetype='application/json')
     
-    @http("PATCH", "/payment/complete/<int:payment_id>")
+    @http("PATCH", "/payment/<int:payment_id>/complete", expected_exceptions=(PaymentNotFound,BadRequest,))
     def complete_payment(self, request, payment_id):
         # return Response(json.dumps({"message": "Complete a payment by ID"}), mimetype="application/json")
         
@@ -104,7 +104,7 @@ class GatewayService(object):
             mimetype='application/json'
         )
     
-    @http("PATCH", "/payment/cancel/<int:payment_id>")
+    @http("PATCH", "/payment/<int:payment_id>/cancel", expected_exceptions=(PaymentNotFound,BadRequest,))
     def cancel_payment(self, request, payment_id):
         # return Response(json.dumps({"message": "Cancel a payment by ID"}), mimetype="application/json")
         
@@ -114,16 +114,33 @@ class GatewayService(object):
             mimetype='application/json'
         )
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    @http("POST", "/payment/midtrans/callback")
+    def midtrans_callback(self, request):
+        try:
+            midtrans_data = json.loads(request.get_data(as_text=True))
+        except ValueError as exc:
+            raise BadRequest("Invalid json: {}".format(exc))
+        
+        transaction_id = midtrans_data.get("transaction_id")
+        transaction_status = midtrans_data.get("transaction_status")
+        
+        result = self.payments_rpc.handle_midtrans_callback(transaction_id, transaction_status)
+        return Response(
+            json.dumps({"response": result}),
+            mimetype='application/json'
+        )
+
+    def checkPaymentToken(self, request):
+        # TODO: Delete return & fill entities' token
+        return
+        orderToken = ""
+        reservationToken = ""
+        eventToken = ""
+        
+        token = request.headers.get("Authorization")
+        
+        if token not in [orderToken, reservationToken, eventToken]:
+            raise BadRequest("Invalid token")
     
 # ========================================================================================================================================================================== 
     # Ini buat test   

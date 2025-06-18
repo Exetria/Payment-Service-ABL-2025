@@ -2,6 +2,7 @@ import json
 
 from marshmallow import ValidationError
 from nameko.exceptions import safe_for_serialization, BadRequest
+from gateway.exceptions import PaymentNotFound  
 from nameko.web.handlers import HttpRequestHandler
 from werkzeug import Response
 
@@ -12,6 +13,7 @@ class HttpEntrypoint(HttpRequestHandler):
     mapped_errors = {
         BadRequest: (400, 'BAD_REQUEST'),
         ValidationError: (400, 'VALIDATION_ERROR'),
+        PaymentNotFound: (404, 'NOT_FOUND'),
     }
 
     def response_from_exception(self, exc):
