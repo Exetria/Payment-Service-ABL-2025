@@ -4,6 +4,7 @@ import enum
 from sqlalchemy import (
     Column, Integer, String, Enum, Float, DateTime
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -26,7 +27,7 @@ DeclarativeBase = declarative_base(cls=Base)
 # Python enum for payment_method
 class PaymentMethodEnum(enum.Enum):
     tunai = "tunai"
-    bca_va = "bca va"
+    bca_va = "bca_va"
     qris = "qris"
     gopay = "gopay"
     ovo = "ovo"
@@ -46,7 +47,7 @@ class Payment(DeclarativeBase):
     status                   = Column(Integer, default=1, nullable=False)
     
     psp_id                   = Column(String)
-    signature_key            = Column(String)
+    raw_response             = Column(JSONB)
     
     settle_date              = Column(DateTime, nullable=True)
 
