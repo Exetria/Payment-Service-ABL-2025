@@ -21,19 +21,6 @@ services:
           - "15673:15672"
       restart: always
 
-  # PGADMIN
-  # pgadmin:
-  #   container_name: pgadmin
-  #   image: dpage/pgadmin4
-  #   restart: always
-  #   depends_on:
-  #     - postgres
-  #   ports:
-  #     - "5050:80"
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
-  #     PGADMIN_DEFAULT_PASSWORD: admin
-
   # GATEWAY
   gateway:
     container_name: gateway
@@ -50,20 +37,6 @@ services:
         RABBIT_HOST: "rabbit"
         RABBIT_PORT: "5672"
         RABBIT_MANAGEMENT_PORT: "15672"
-
-  # ECHO
-  echo:
-    container_name: echo
-    build: ./echo
-    restart: always
-    external_links:
-      - rabbit
-    environment:
-      RABBIT_PASSWORD: "guest"
-      RABBIT_USER: "guest"
-      RABBIT_HOST: "rabbit"
-      RABBIT_PORT: "5672"
-      RABBIT_MANAGEMENT_PORT: "15672"
 
   # PAYMENTS
   payments:
