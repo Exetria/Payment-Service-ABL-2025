@@ -1,3 +1,7 @@
+import requests
+from datetime import datetime
+from base64 import b64encode
+
 from nameko.exceptions import BadRequest
 from nameko.events import EventDispatcher
 from nameko.rpc import rpc
@@ -168,11 +172,43 @@ class PaymentsService:
     def checkMidtransTransactionStatus(self):
         return "hello check midtrans transaction status"
     
-    def completeMidtransTransactionStatus(self):
-        return "hello complete midtrans transaction status"
-    
     def cancelMidtransTransactionStatus(self):
         return "hello cancel midtrans transaction status"
+    
+    @rpc
+    def handle_midtrans_callback(self, midtrans_transaction_id, midtrans_transaction_status):
+        try: 
+            # Fetch the existing instance
+            targetedPayment = self.db.query(Payment).filter(Payment.psp_id == midtrans_transaction_id).first()
+            
+            # If not found or already completed/cancelled, return
+            if not targetedPayment:
+                return "Payment Not Found"
+            if targetedPayment.status != 1:
+                return "Already Finished or Cancelled"
+            
+            # Update the instance in db
+            # DONE
+            if midtrans_transaction_status == "settlement":
+                targetedPayment.status = 2           
+            # CANCELLED       
+            elif midtrans_transaction_status == "cancel" or midtrans_transaction_status == "expire":
+                targetedPayment.status = 3           
+            else:
+                return "Status Not Valid"
+            
+            targetedPayment.settle_date = datetime.now()
+            self.db.commit()
+            
+            # Update requester status
+            self.update_requester_status(targetedPayment.requester_type, targetedPayment.requester_id, targetedPayment.secondary_requester_id, targetedPayment.status)
+        
+            # Return status
+            return "Success"
+        
+        except Exception as e:
+            # Return status
+            return "Failed"
     
 # =================================================================================FUNGSI TEST=============================================================================== 
 
@@ -265,4 +301,3 @@ class PaymentsService:
         # Delete in db
         self.db.delete(test)
         self.db.commit()
-
