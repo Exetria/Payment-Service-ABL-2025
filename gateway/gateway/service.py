@@ -44,6 +44,18 @@ class GatewayService(object):
             mimetype='application/json'
         )
     
+    @http("GET", "/payment/customer/<int:customer_id>", expected_exceptions=(BadRequest,))
+    def get_payment_by_customer_id(self, request, customer_id):
+        """
+        Get payment by customer ID.
+        """
+        payments = self.payments_rpc.get_payment_by_customer_id(customer_id)
+        return Response(
+            json.dumps(payments),
+            mimetype='application/json'
+        )
+
+    
     @http("GET", "/payment/requester/<int:requester_id>", expected_exceptions=(BadRequest,))
     def get_payment_by_requester_id(self, request, requester_id):
         """

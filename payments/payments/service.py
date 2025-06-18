@@ -43,8 +43,26 @@ class PaymentsService:
             return "Failed to fetch payment"
     
     @rpc
+    def get_payment_by_customer_id(self, customer_id):
+        try:
+            payments = self.db.query(Payment).filter(Payment.customer_id == customer_id).all()
+            if not payments:
+                return "No Payments Found for this Customer"
+
+            return PaymentSchema(many=True).dump(payments).data
+        except Exception as e:
+            return f"Failed to fetch payment by customer_id: {str(e)}"
+
+    @rpc
     def get_payment_by_requester_id(self, requester_id):
-        return "hello payment by requester id"
+        try:
+            payments = self.db.query(Payment).filter(Payment.requester_id == requester_id).all()
+            if not payments:
+                return "No Payments Found for this Requester"
+
+            return PaymentSchema(many=True).dump(payments).data
+        except Exception as e:
+            return f"Failed to fetch payment by requester_id: {str(e)}"
     
     @rpc
     def get_payment_status(self, payment_id):
