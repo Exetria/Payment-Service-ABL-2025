@@ -220,7 +220,7 @@ class PaymentsService:
         }
 
         # Siapkan authorization header
-        server_key = "YOUR_MIDTRANS_SERVER_KEY"
+        server_key = "SB-Mid-server-CBPmGqU_09dO-JTQN7C2SqHe"
         base64_auth = base64.b64encode(f"{server_key}:".encode()).decode()
 
         headers = {
@@ -265,7 +265,7 @@ class PaymentsService:
         order_id = payment.psp_id
 
         # Set header Midtrans
-        server_key = "YOUR_MIDTRANS_SERVER_KEY"
+        server_key = "SB-Mid-server-CBPmGqU_09dO-JTQN7C2SqHe"
         base64_auth = base64.b64encode(f"{server_key}:".encode()).decode()
 
         headers = {
