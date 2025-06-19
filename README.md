@@ -19,16 +19,12 @@
 
 ```json
 {
-    "settle_date": null,
-    "requester_type": "Order",
-    "payment_amount": 150000.0,
-    "requester_id": 12345,
-    "payment_info": "02487931059840826509698",
-    "customer_id": 12345423,
-    "id": 4,
-    "payment_method": "bca_va",
-    "secondary_requester_id": 67890,
-    "status": "Pending"
+  "customer_id": 12345423,
+  "requester_type": 1,
+  "requester_id": 12345,
+  "secondary_requester_id": 67890,
+  "payment_method": "bca_va",
+  "payment_amount": 150000.0
 }
 ```
 
@@ -39,7 +35,16 @@
 
 ```json
 {
-    "id": 1
+    "settle_date": null,
+    "requester_type": "Order",
+    "payment_amount": 150000.0,
+    "requester_id": 12345,
+    "payment_info": "02487931059840826509698",
+    "customer_id": 12345423,
+    "id": 4,
+    "payment_method": "bca_va",
+    "secondary_requester_id": 67890,
+    "status": "Pending"
 }
 ```
 
