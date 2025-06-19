@@ -11,6 +11,11 @@ from payments.exceptions import NotFound
 from payments.models import DeclarativeBase, Payment, PaymentMethodEnum
 from payments.schemas import PaymentSchema
 
+import uuid
+import base64
+import requests
+# IMPORT UDAH ADA DIATAS YG INI
+
 
 class PaymentsService:
     name = 'payments'
@@ -41,7 +46,7 @@ class PaymentsService:
 
         except Exception as e:
             return "Failed to fetch payment"
-    
+
     @rpc
     def get_payment_by_customer_id(self, customer_id):
         try:
@@ -53,6 +58,7 @@ class PaymentsService:
         except Exception as e:
             return f"Failed to fetch payment by customer_id: {str(e)}"
 
+
     @rpc
     def get_payment_by_requester_id(self, requester_id):
         try:
@@ -63,7 +69,9 @@ class PaymentsService:
             return PaymentSchema(many=True).dump(payments).data
         except Exception as e:
             return f"Failed to fetch payment by requester_id: {str(e)}"
-    
+
+
+
     @rpc
     def get_payment_status(self, payment_id):
         status = self.db.query(Payment.status).filter(Payment.id == payment_id).scalar()
@@ -71,7 +79,7 @@ class PaymentsService:
         if not status: raise NotFound(f'Payment with id {payment_id} not found')
 
         return status
-    
+
     @rpc
     def get_payment_amount(self, payment_id):
         amount = self.db.query(Payment.payment_amount).filter(Payment.id == payment_id).scalar()
@@ -79,7 +87,7 @@ class PaymentsService:
         if not amount: raise NotFound(f'Payment with id {payment_id} not found')
 
         return amount
-    
+
     @rpc
     def create_payment(self, data):
         validated, errors = PaymentSchema().load(data)
@@ -110,10 +118,10 @@ class PaymentsService:
         # })
 
         return PaymentSchema().dump(new_payment).data
-    
+
     @rpc
     def complete_payment(self, payment_id):
-        try: 
+        try:
             # Fetch the existing instance
             targetedPayment = self.db.query(Payment).get(payment_id)
 
@@ -122,21 +130,21 @@ class PaymentsService:
                 return "Payment Not Found"
             if targetedPayment.status != 1:
                 return "Already Finished or Cancelled"
-            
+
             # Update the instance in db
             targetedPayment.status = 2                  # DONE
             self.db.commit()
-            
+
             # Update requester status
             self.update_requester_status(targetedPayment.requester_type, targetedPayment.requester_id, targetedPayment.secondary_requester_id, 1)
-        
+
             # Return status
             return "Success"
-        
+
         except Exception as e:
             # Return status
             return "Failed"
-        
+
     @rpc
     def cancel_payment(self, payment_id):
         try:
@@ -148,25 +156,25 @@ class PaymentsService:
                 return "Payment Not Found"
             if targetedPayment.status != 1:
                 return "Already Finished or Cancelled"
-            
+
             # Update the instance in db
             targetedPayment.status = 3                  # CANCELLED
             self.db.commit()
-            
+
             # Update requester status
             self.update_requester_status(targetedPayment.requester_type, targetedPayment.requester_id, targetedPayment.secondary_requester_id, 0)
 
             # Return status
             return "Success"
-        
+
         except Exception as e:
             # Return status
             return "Failed"
 
     def update_requester_status(self, requester_type, requester_id, secondary_requester_id, status):
         # TODO: handle status, 0 for cancel, 1 for complete
-        
-        # 1 = RPC to Order | 2 to Reservation | 3  to Event	
+
+        # 1 = RPC to Order | 2 to Reservation | 3  to Event
         if requester_type == 1:
             # Call update API to order
             if secondary_requester_id is not None:
@@ -181,54 +189,155 @@ class PaymentsService:
             pass
 
         return
-    
-# =================================================================================FUNGSI MIDTRANS=============================================================================== 
 
-    def createMidtransTransaction(self):
-        return "hello create midtrans transaction"
-    
-    def checkMidtransTransactionStatus(self):
-        return "hello check midtrans transaction status"
-    
+    # =================================================================================FUNGSI MIDTRANS===============================================================================
+
+    @rpc
+    def createMidtransTransaction(self, payment_id):
+        # Ambil data pembayaran dari database
+        payment = self.db.query(Payment).get(payment_id)
+        if not payment:
+            raise NotFound(f"Payment with ID {payment_id} not found")
+
+        # Set parameter Midtrans
+        order_id = str(uuid.uuid4())
+        gross_amount = payment.payment_amount or 0
+
+        params = {
+            "transaction_details": {
+                "order_id": order_id,
+                "gross_amount": gross_amount
+            },
+            "item_details": [{
+                "price": gross_amount,
+                "quantity": 1,
+                "name": f"Pembayaran ID {payment_id}"
+            }],
+            "customer_details": {
+                "first_name": "Customer",
+                "email": "customer@example.com"  # Bisa ganti dari data user jika ada
+            }
+        }
+
+        # Siapkan authorization header
+        server_key = "YOUR_MIDTRANS_SERVER_KEY"
+        base64_auth = base64.b64encode(f"{server_key}:".encode()).decode()
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Basic {base64_auth}"
+        }
+
+        # Kirim request ke Midtrans sandbox
+        try:
+            response = requests.post(
+                "https://app.sandbox.midtrans.com/snap/v1/transactions",
+                headers=headers,
+                json=params
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            # Simpan order_id jika ingin ditrack nanti
+            payment.psp_id = order_id
+            self.db.commit()
+
+            return {
+                "redirect_url": result.get("redirect_url"),
+                "token": result.get("token")
+            }
+
+        except requests.RequestException as e:
+            return {"error": str(e)}
+
+    @rpc
+    def checkMidtransTransactionStatus(self, payment_id):
+        # Ambil data payment berdasarkan ID
+        payment = self.db.query(Payment).get(payment_id)
+        if not payment:
+            raise NotFound(f"Payment with ID {payment_id} not found")
+
+        # Pastikan sudah ada psp_id (order_id dari Midtrans)
+        if not payment.psp_id:
+            raise BadRequest("psp_id (Midtrans Order ID) is missing")
+
+        order_id = payment.psp_id
+
+        # Set header Midtrans
+        server_key = "YOUR_MIDTRANS_SERVER_KEY"
+        base64_auth = base64.b64encode(f"{server_key}:".encode()).decode()
+
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Basic {base64_auth}"
+        }
+
+        # Buat request ke Midtrans
+        try:
+            url = f"https://api.sandbox.midtrans.com/v2/{order_id}/status"
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+
+            result = response.json()
+
+            # Update status payment di database jika perlu
+            transaction_status = result.get("transaction_status")
+            if transaction_status == "settlement":
+                payment.status = 2  # DONE
+            elif transaction_status in ["expire", "cancel", "deny"]:
+                payment.status = 3  # CANCELLED
+            self.db.commit()
+
+            return {
+                "order_id": order_id,
+                "status": transaction_status,
+                "fraud_status": result.get("fraud_status"),
+                "payment_type": result.get("payment_type")
+            }
+
+        except requests.RequestException as e:
+            return {"error": str(e)}
+
     def cancelMidtransTransactionStatus(self):
         return "hello cancel midtrans transaction status"
-    
+
     @rpc
     def handle_midtrans_callback(self, midtrans_transaction_id, midtrans_transaction_status):
-        try: 
+        try:
             # Fetch the existing instance
             targetedPayment = self.db.query(Payment).filter(Payment.psp_id == midtrans_transaction_id).first()
-            
+
             # If not found or already completed/cancelled, return
             if not targetedPayment:
                 return "Payment Not Found"
             if targetedPayment.status != 1:
                 return "Already Finished or Cancelled"
-            
+
             # Update the instance in db
             # DONE
             if midtrans_transaction_status == "settlement":
-                targetedPayment.status = 2           
-            # CANCELLED       
+                targetedPayment.status = 2
+                # CANCELLED
             elif midtrans_transaction_status == "cancel" or midtrans_transaction_status == "expire":
-                targetedPayment.status = 3           
+                targetedPayment.status = 3
             else:
                 return "Status Not Valid"
-            
+
             targetedPayment.settle_date = datetime.now()
             self.db.commit()
-            
+
             # Update requester status
             self.update_requester_status(targetedPayment.requester_type, targetedPayment.requester_id, targetedPayment.secondary_requester_id, targetedPayment.status)
-        
+
             # Return status
             return "Success"
-        
+
         except Exception as e:
             # Return status
             return "Failed"
-    
-# =================================================================================FUNGSI TEST=============================================================================== 
+
+    # =================================================================================FUNGSI TEST===============================================================================
 
     @rpc
     def test_get_payment_list(self):
@@ -267,13 +376,13 @@ class PaymentsService:
         validated, errors = PaymentSchema().load(data)
         if errors:
             raise BadRequest("Validation failed: {}".format(errors))
-        
+
         # Create Instance
         test = Payment(
             name=validated['name'],
             age=validated['age']
         )
-        
+
         # Add to db
         self.db.add(test)
         self.db.commit()
@@ -302,12 +411,12 @@ class PaymentsService:
         # If not found, raise NotFound exception
         if not test:
             raise NotFound('Payment with id {} not found'.format(data['id']))
-        
+
         # Update the instance in db
         test.name = data['name']
         test.age = data['age']
         self.db.commit()
-        
+
         # Return updated instance (serialized)
         return PaymentSchema().dump(test).data
 
@@ -315,7 +424,9 @@ class PaymentsService:
     def delete_test(self, test_id):
         # Fetch targeted instance
         test = self.db.query(Payment).get(test_id)
-        
+
         # Delete in db
         self.db.delete(test)
         self.db.commit()
+
+
