@@ -19,12 +19,16 @@
 
 ```json
 {
-  "customer_id": 12345423,
-  "requester_type": 1,
-  "requester_id": 12345,
-  "secondary_requester_id": 67890,
-  "payment_method": "bca_va",
-  "payment_amount": 150000.0
+    "settle_date": null,
+    "requester_type": "Order",
+    "payment_amount": 150000.0,
+    "requester_id": 12345,
+    "payment_info": "02487931059840826509698",
+    "customer_id": 12345423,
+    "id": 4,
+    "payment_method": "bca_va",
+    "secondary_requester_id": 67890,
+    "status": "Pending"
 }
 ```
 
@@ -67,7 +71,7 @@
         "id": 1,
         "payment_amount": 150000.0,
         "payment_method": "bca_va",
-        "status": 1,
+        "status": "Pending",
         "settle_date": null,
         "secondary_requester_id": 67890,
         "payment_info": "02487385974310231818750",
@@ -102,16 +106,15 @@
 
 ```json
 {
-    "id": 1,
+    "requester_type": "Order",
     "payment_amount": 150000.0,
-    "payment_method": "bca_va",
-    "status": 1,
-    "settle_date": null,
-    "secondary_requester_id": 67890,
-    "payment_info": "02487385974310231818750",
-    "customer_id": 12345423,
     "requester_id": 12345,
-    "requester_type": "Order"
+    "payment_info": "02487153957812346414245",
+    "customer_id": 12345423,
+    "id": 2,
+    "payment_method": "bca_va",
+    "secondary_requester_id": 67890,
+    "status": "Completed"
 }
 ```
 
@@ -143,7 +146,7 @@
         "id": 1,
         "payment_amount": 150000.0,
         "payment_method": "bca_va",
-        "status": 1,
+        "status": "Pending",
         "settle_date": null,
         "secondary_requester_id": 67890,
         "payment_info": "02487385974310231818750",
@@ -182,7 +185,7 @@
         "id": 1,
         "payment_amount": 150000.0,
         "payment_method": "bca_va",
-        "status": 1,
+        "status": "Pending",
         "settle_date": null,
         "secondary_requester_id": 67890,
         "payment_info": "02487385974310231818750",
@@ -217,7 +220,7 @@
 
 ```json
 {
-    "status": 1
+    "status": "Pending"
 }
 ```
 
