@@ -429,4 +429,107 @@ class PaymentsService:
         self.db.delete(test)
         self.db.commit()
 
+    @rpc
+    def create_test_payment(self, data):
+        # Validate input
+        validated, errors = PaymentSchema().load(data)
+        if errors:
+            raise BadRequest("Validation failed: {}".format(errors))
+
+        # Create Instance
+        test_payment = Payment(
+            customer_id=validated['customer_id'],
+            requester_type=validated['requester_type'],
+            requester_id=validated['requester_id'],
+            secondary_requester_id=validated['secondary_requester_id'],
+            payment_method=validated['payment_method'],
+            payment_amount=validated['payment_amount'],
+            status=validated['status']
+        )
+
+        # Add to db
+        self.db.add(test_payment)
+        self.db.commit()
+
+        # Serialize the instance
+        testPaymentResult = PaymentSchema().dump(test_payment).data
+
+        # Dispatch event in Docker
+        self.event_dispatcher('test_payment_created', {
+            'test_payment_result': testPaymentResult,
+        })
+
+        # Return the serialized instance
+        return testPaymentResult
+
+    @rpc
+    def update_test_payment(self, payment_id, data):
+        # Validate input
+        validated, errors = PaymentSchema().load(data)
+        if errors:
+            raise BadRequest("Validation failed: {}".format(errors))
+
+        # Fetch the existing instance
+        test_payment = self.db.query(Payment).get(payment_id)
+
+        # If not found, raise NotFound exception
+        if not test_payment:
+            raise NotFound('Payment with id {} not found'.format(payment_id))
+
+        # Update the instance in db
+        test_payment.customer_id = validated['customer_id']
+        test_payment.requester_type = validated['requester_type']
+        test_payment.requester_id = validated['requester_id']
+        test_payment.secondary_requester_id = validated['secondary_requester_id']
+        test_payment.payment_method = validated['payment_method']
+        test_payment.payment_amount = validated['payment_amount']
+        test_payment.status = validated['status']
+
+        self.db.commit()
+
+        # Return updated instance (serialized)
+        return PaymentSchema().dump(test_payment).data
+
+    @rpc
+    def check_test_payment_status(self, payment_id):
+        # Fetch the existing instance
+        payment = self.db.query(Payment).get(payment_id)
+
+        if not payment:
+            raise NotFound(f'Payment with id {payment_id} not found')
+
+        return payment.status
+
+    @rpc
+    def cancel_test_payment(self, payment_id):
+        # Fetch the existing instance
+        payment = self.db.query(Payment).get(payment_id)
+
+        if not payment:
+            raise NotFound(f'Payment with id {payment_id} not found')
+
+        if payment.status != 1:
+            raise BadRequest("Payment is already completed or cancelled")
+        # Update the instance in db
+        payment.status = 3
+        self.db.commit()
+        # Return status
+        return "Payment Cancelled Successfully"
+    
+    @rpc
+    def complete_test_payment(self, payment_id):
+        # Fetch the existing instance
+        payment = self.db.query(Payment).get(payment_id)
+
+        if not payment:
+            raise NotFound(f'Payment with id {payment_id} not found')
+
+        if payment.status != 1:
+            raise BadRequest("Payment is already completed or cancelled")
+        # Update the instance in db
+        payment.status = 2
+        self.db.commit()
+        # Return status
+        return "Payment Completed Successfully"
+
 
