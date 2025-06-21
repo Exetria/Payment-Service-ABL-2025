@@ -237,7 +237,7 @@
 
 **Method**: `GET`
 
-**Description**: Get payment status
+**Description**: Get payment amount
 
 **Request Header**
 ```json
