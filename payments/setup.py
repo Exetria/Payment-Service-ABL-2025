@@ -12,6 +12,7 @@ setup(
         'alembic<1.9',
         'marshmallow==2.19.2',
         'psycopg2-binary==2.9.5',
+        'requests==2.31.0',
     ],
     extras_require={
         'dev': [

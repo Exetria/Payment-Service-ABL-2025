@@ -25,7 +25,7 @@ class GetPaymentSchema(Schema):
     payment_method = fields.Str()
     payment_amount = fields.Float()
     payment_info = fields.Method("get_payment_info")
-    status = fields.Int()
+    status = fields.Method("get_status")
 
     settle_date = fields.DateTime(allow_none=True)
     created_at = fields.DateTime()
@@ -66,4 +66,12 @@ class GetPaymentSchema(Schema):
 
             return f"raw_response: {raw} | method: {method}"
         except Exception as e:
-            return f"error: {str(e)}"  # Optional: for debugging
+            return f"error: {str(e)}"
+        
+    def get_status(self, obj):
+        status = {
+            1: "Pending",
+            2: "Completed",
+            3: "Cancelled"
+        }
+        return status.get(obj.get('status'), "Unknown")

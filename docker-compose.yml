@@ -51,6 +51,7 @@ services:
         - rabbit
         - postgres
     environment:
+        MIDTRANS_KEY: "MIDTRANS_KEY"
         DB_PASSWORD: "password"
         DB_USER: "postgres"
         DB_HOST: "postgres"
